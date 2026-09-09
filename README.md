@@ -74,3 +74,17 @@ not extracted to disk.
 
 Use `--help` to see the optional chunk-size setting. Generated interim files
 and raw NPPES data are excluded from Git.
+
+## Run the transformation step
+
+The transformation command keeps individual Massachusetts providers, selects
+the Version 1 primary-care cohort, and writes provider, taxonomy, and
+data-quality outputs. It does not print provider-level records.
+
+```powershell
+.\.venv\Scripts\python.exe src\transform.py `
+  data\interim\NPPES_Data_Dissemination_080326_080926_Weekly_V2_massachusetts.parquet `
+  data\processed
+```
+
+Generated processed files are excluded from Git.
