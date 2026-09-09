@@ -2,7 +2,7 @@
 
 ## Project purpose
 
-This beginner-friendly Python data-engineering project will eventually turn NPPES provider-directory source data into clean, queryable Parquet datasets. It is intentionally set up as a project skeleton only: no data pipeline has been implemented yet.
+This beginner-friendly Python data-engineering project turns NPPES provider-directory source data into clean, queryable Parquet datasets. The first ingestion step streams weekly source data from its ZIP archive and produces a Massachusetts subset; primary-care and change-analysis transformations will follow in later steps.
 
 ## Project scope
 
@@ -38,6 +38,7 @@ NPPES information is self-reported. An NPI record does **not** prove licensure, 
 
 - `data/raw/` — original input files, kept unchanged.
 - `data/sample/` — small, safe example files for local development and tests.
+- `data/interim/` — generated ingestion-stage Parquet files and run metadata (not committed to Git).
 - `data/processed/` — generated Parquet outputs (not committed to Git).
 - `src/` — future Python pipeline code.
 - `sql/` — future DuckDB SQL queries and transformations.
@@ -57,3 +58,19 @@ python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 ```
+
+## Run the ingestion step
+
+The ingestion command streams the main NPPES provider CSV from a ZIP archive,
+filters it to primary business-practice locations in Massachusetts, and writes
+a Parquet file plus JSON run metadata. The source ZIP is read in place and is
+not extracted to disk.
+
+```powershell
+.\.venv\Scripts\python.exe src\ingest.py `
+  data\raw\NPPES_Data_Dissemination_080326_080926_Weekly_V2.zip `
+  data\interim
+```
+
+Use `--help` to see the optional chunk-size setting. Generated interim files
+and raw NPPES data are excluded from Git.
