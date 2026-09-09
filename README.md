@@ -104,3 +104,14 @@ duplicate rows.
 ```
 
 The DuckDB database and other warehouse files are excluded from Git.
+
+## Run aggregate analytics queries
+
+After running the load step, execute [sql/analytics.sql](sql/analytics.sql)
+against the local warehouse with the DuckDB CLI or a DuckDB-compatible client.
+The file contains only aggregate queries and does not return provider-level
+records.
+
+```powershell
+duckdb data\warehouse\nppes_provider_directory.duckdb < sql\analytics.sql
+```
