@@ -88,3 +88,17 @@ data-quality outputs. It does not print provider-level records.
 ```
 
 Generated processed files are excluded from Git.
+
+## Run the load step
+
+The load command creates a local DuckDB analytics database from the processed
+Parquet files. Rerunning it replaces the tables and views, so it does not add
+duplicate rows.
+
+```powershell
+.\.venv\Scripts\python.exe src\load.py `
+  data\processed `
+  data\warehouse\nppes_provider_directory.duckdb
+```
+
+The DuckDB database and other warehouse files are excluded from Git.
