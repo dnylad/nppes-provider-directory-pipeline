@@ -4,6 +4,36 @@
 
 This beginner-friendly Python data-engineering project will eventually turn NPPES provider-directory source data into clean, queryable Parquet datasets. It is intentionally set up as a project skeleton only: no data pipeline has been implemented yet.
 
+## Project scope
+
+**NPPES Provider Directory Change Pipeline** focuses on primary-care providers in Massachusetts. It will help healthcare operations, provider-directory, and network teams understand the size, quality, and changes in this provider cohort over time.
+
+### Problem statement
+
+Provider-directory teams need a repeatable way to understand where primary-care providers are listed, how complete their NPPES records are, and what changes between published NPPES data releases. Manually comparing large source files is slow and difficult to audit.
+
+### Questions the pipeline will answer
+
+- How many in-scope providers are listed by Massachusetts ZIP code?
+- How complete are key directory fields, such as practice address and taxonomy?
+- Which provider records are new, deactivated, or no longer present between releases?
+- Which records have practice-address or taxonomy changes?
+
+### Preliminary primary-care definition (assumption)
+
+Until the cohort definition is refined with stakeholders, primary care means providers with at least one of these NPPES taxonomy families:
+
+- Family Medicine
+- Internal Medicine
+- General Practice
+- Pediatrics
+
+This is an assumption, not a final clinical or network definition, and can be expanded later.
+
+### Important limitation
+
+NPPES information is self-reported. An NPI record does **not** prove licensure, credentialing, network participation, or whether a provider accepts new patients.
+
 ## Project layout
 
 - `data/raw/` — original input files, kept unchanged.
