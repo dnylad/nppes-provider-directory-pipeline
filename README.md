@@ -1,139 +1,144 @@
-# nppes-provider-directory-pipeline
+# NPPES Provider Directory Change Pipeline
 
 [![Tests](https://github.com/dnylad/nppes-provider-directory-pipeline/actions/workflows/tests.yml/badge.svg)](https://github.com/dnylad/nppes-provider-directory-pipeline/actions/workflows/tests.yml)
 
-## Project purpose
+## Project summary
 
-This beginner-friendly Python data-engineering project turns NPPES provider-directory source data into clean, queryable Parquet datasets. The first ingestion step streams weekly source data from its ZIP archive and produces a Massachusetts subset; primary-care and change-analysis transformations will follow in later steps.
+A beginner-friendly Python data-engineering project that turns CMS NPPES weekly provider-directory extracts into reproducible Massachusetts primary-care datasets, a local DuckDB analytics layer, and cautious snapshot-change reports. Raw source files remain local and are never committed to Git.
 
-## Project scope
+## Massachusetts primary-care use case
 
-**NPPES Provider Directory Change Pipeline** focuses on primary-care providers in Massachusetts. It will help healthcare operations, provider-directory, and network teams understand the size, quality, and changes in this provider cohort over time.
+Healthcare operations, provider-directory, and network teams need a repeatable way to understand the Massachusetts primary-care directory footprint, measure directory-field completeness, and compare released NPPES files over time. This project provides a small, auditable foundation for those tasks.
 
-### Problem statement
+```mermaid
+flowchart LR
+    A[CMS NPPES ZIP files] --> B[Python ingestion]
+    B --> C[Interim Massachusetts Parquet]
+    C --> D[Python transformation]
+    D --> E[Processed primary-care Parquet]
+    E --> F[DuckDB warehouse]
+    F --> G[Aggregate analytics]
+    E --> H[Snapshot change report]
+```
 
-Provider-directory teams need a repeatable way to understand where primary-care providers are listed, how complete their NPPES records are, and what changes between published NPPES data releases. Manually comparing large source files is slow and difficult to audit.
+## Technology stack
 
-### Questions the pipeline will answer
+- **Python 3.12** for pipeline orchestration
+- **pandas** for tabular processing
+- **PyArrow and Parquet** for efficient local datasets
+- **DuckDB** for local analytics and reusable views
+- **pytest** for synthetic-data validation
+- **GitHub Actions** for continuous integration
 
-- How many in-scope providers are listed by Massachusetts ZIP code?
-- How complete are key directory fields, such as practice address and taxonomy?
-- Which provider records are new, deactivated, or no longer present between releases?
-- Which records have practice-address or taxonomy changes?
+## Version 1 cohort definition
 
-### Preliminary primary-care definition (assumption)
+Version 1 includes individual providers whose **primary business-practice location state is Massachusetts** and who report any of these NPPES taxonomy codes. The matching taxonomy does not need to be marked as primary.
 
-Until the cohort definition is refined with stakeholders, primary care means providers with at least one of these NPPES taxonomy families:
+| Taxonomy | Code |
+| --- | --- |
+| Family Medicine | `207Q00000X` |
+| Internal Medicine | `207R00000X` |
+| General Practice | `208D00000X` |
+| Pediatrics | `208000000X` |
 
-- Family Medicine
-- Internal Medicine
-- General Practice
-- Pediatrics
+Organization records, advanced practice providers, subspecialties, and non-primary practice locations are outside Version 1 scope.
 
-This is an assumption, not a final clinical or network definition, and can be expanded later.
+## Data source and limitations
 
-### Important limitation
+The source is the [CMS NPPES Version 2 downloadable files](https://download.cms.gov/nppes/NPI_Files.html).
 
-NPPES information is self-reported. An NPI record does **not** prove licensure, credentialing, network participation, or whether a provider accepts new patients.
+- NPPES information is self-reported; it does not prove licensure, credentialing, network participation, appointment availability, or whether a provider accepts new patients.
+- The current workflow uses weekly incremental files. These are not complete statewide baselines, so “newly observed” and “not observed” records in a comparison do not establish statewide additions or removals.
+- ZIP-level counts describe directory coverage, not care access, capacity, demand, or network adequacy.
 
-## Project layout
+## Setup
 
-- `data/raw/` — original input files, kept unchanged.
-- `data/sample/` — small, safe example files for local development and tests.
-- `data/interim/` — generated ingestion-stage Parquet files and run metadata (not committed to Git).
-- `data/processed/` — generated Parquet outputs (not committed to Git).
-- `src/` — future Python pipeline code.
-- `sql/` — future DuckDB SQL queries and transformations.
-- `tests/` — pytest test modules.
-- `docs/` — project documentation, including the architecture overview.
-
-## Planned tools
-
-Python, pandas, DuckDB, Parquet, pytest, and GitHub Actions.
-
-## Getting started
-
-Create and activate a virtual environment, then install dependencies:
+Prerequisite: Python 3.12 or another supported Python 3 release installed locally.
 
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 ```
 
-## Run the ingestion step
+## Run the pipeline
 
-The ingestion command streams the main NPPES provider CSV from a ZIP archive,
-filters it to primary business-practice locations in Massachusetts, and writes
-a Parquet file plus JSON run metadata. The source ZIP is read in place and is
-not extracted to disk.
+Keep CMS ZIP files in `data/raw/`; that directory is intentionally ignored by Git. Replace placeholders below with your local filenames and snapshot label.
+
+1. Ingest a weekly ZIP to a Massachusetts interim Parquet dataset.
+
+   ```powershell
+   .\.venv\Scripts\python.exe src\ingest.py `
+     data\raw\<nppes_weekly_zip>.zip `
+     data\interim\<snapshot_label>
+   ```
+
+2. Transform the interim snapshot into the Version 1 primary-care tables.
+
+   ```powershell
+   .\.venv\Scripts\python.exe src\transform.py `
+     data\interim\<snapshot_label>\<nppes_weekly_zip>_massachusetts.parquet `
+     data\processed\<snapshot_label>
+   ```
+
+3. Load processed Parquet into local DuckDB. Reruns replace tables and views rather than append duplicate rows.
+
+   ```powershell
+   .\.venv\Scripts\python.exe src\load.py `
+     data\processed\<snapshot_label> `
+     data\warehouse\nppes_provider_directory.duckdb
+   ```
+
+4. Run aggregate analytics with the DuckDB CLI (installed separately) or another DuckDB-compatible client.
+
+   ```powershell
+   duckdb data\warehouse\nppes_provider_directory.duckdb < sql\analytics.sql
+   ```
+
+5. Compare two processed snapshots in chronological order. The report uses cautious “newly observed” and “not observed” terminology.
+
+   ```powershell
+   .\.venv\Scripts\python.exe src\report_changes.py `
+     data\processed\<older_label>\providers_ma_primary_care.parquet `
+     data\processed\<newer_label>\providers_ma_primary_care.parquet `
+     data\processed\<older_label>\provider_taxonomies.parquet `
+     data\processed\<newer_label>\provider_taxonomies.parquet `
+     --output-dir data\reports\<older_label>_to_<newer_label>
+   ```
+
+Generated interim, processed, warehouse, and report outputs are excluded from Git.
+
+## Testing and CI
+
+Run the synthetic test suite locally:
 
 ```powershell
-.\.venv\Scripts\python.exe src\ingest.py `
-  data\raw\NPPES_Data_Dissemination_080326_080926_Weekly_V2.zip `
-  data\interim
+.\.venv\Scripts\python.exe -m pytest tests
 ```
 
-Use `--help` to see the optional chunk-size setting. Generated interim files
-and raw NPPES data are excluded from Git.
+The [GitHub Actions workflow](.github/workflows/tests.yml) runs this synthetic test suite on pushes and pull requests. Tests do not use `data/raw/`, generated Parquet, or the local DuckDB database.
 
-## Run the transformation step
+## Project documentation
 
-The transformation command keeps individual Massachusetts providers, selects
-the Version 1 primary-care cohort, and writes provider, taxonomy, and
-data-quality outputs. It does not print provider-level records.
+- [Architecture overview](docs/architecture.md)
+- [Data plan](docs/data_plan.md)
+- [Data contract](docs/data_contract.md)
+- [Weekly source log](docs/source_log.md)
+- [Initial aggregate findings](docs/initial_findings.md)
+- [Weekly change-report example](docs/change_report_example.md)
 
-```powershell
-.\.venv\Scripts\python.exe src\transform.py `
-  data\interim\NPPES_Data_Dissemination_080326_080926_Weekly_V2_massachusetts.parquet `
-  data\processed
-```
+## What this demonstrates
 
-Generated processed files are excluded from Git.
+- Designing a layered data pipeline from raw ZIPs through Parquet and DuckDB
+- Validating data contracts and provider-directory quality rules
+- Normalizing repeating taxonomy fields into an analysis-ready table
+- Building idempotent local warehouse loads and reusable SQL views
+- Writing aggregate-only analytics and cautious incremental snapshot reports
+- Testing pipeline behavior with synthetic fixtures and CI automation
 
-## Run the load step
+## Roadmap
 
-The load command creates a local DuckDB analytics database from the processed
-Parquet files. Rerunning it replaces the tables and views, so it does not add
-duplicate rows.
-
-```powershell
-.\.venv\Scripts\python.exe src\load.py `
-  data\processed `
-  data\warehouse\nppes_provider_directory.duckdb
-```
-
-The DuckDB database and other warehouse files are excluded from Git.
-
-## Run aggregate analytics queries
-
-After running the load step, execute [sql/analytics.sql](sql/analytics.sql)
-against the local warehouse with the DuckDB CLI or a DuckDB-compatible client.
-The file contains only aggregate queries and does not return provider-level
-records.
-
-```powershell
-duckdb data\warehouse\nppes_provider_directory.duckdb < sql\analytics.sql
-```
-
-## Compare processed snapshots
-
-Compare two processed primary-care snapshots by providing the older and newer
-provider Parquet files followed by their matching taxonomy Parquet files. The
-command writes aggregate-only Markdown and JSON reports to `data/reports/`.
-
-```powershell
-.\.venv\Scripts\python.exe src\report_changes.py `
-  path\to\old\providers_ma_primary_care.parquet `
-  path\to\new\providers_ma_primary_care.parquet `
-  path\to\old\provider_taxonomies.parquet `
-  path\to\new\provider_taxonomies.parquet `
-  --output-dir data\reports
-```
-
-The current weekly file is incremental, not a complete statewide baseline.
-For that reason, the report calls absent records “not observed” and newly
-appearing records “newly observed”; it does not infer provider entry or
-removal from file presence alone. A deactivation is called out only when a
-status transition and deactivation date support it. Report outputs are
-excluded from Git.
+- Ingest a monthly full replacement file to establish a comparison baseline
+- Incorporate non-primary practice locations
+- Expand the cohort to advanced practice providers
+- Add scheduled refreshes and repeatable snapshot monitoring
