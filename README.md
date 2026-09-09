@@ -1,5 +1,7 @@
 # nppes-provider-directory-pipeline
 
+[![Tests](https://github.com/dnylad/nppes-provider-directory-pipeline/actions/workflows/tests.yml/badge.svg)](https://github.com/dnylad/nppes-provider-directory-pipeline/actions/workflows/tests.yml)
+
 ## Project purpose
 
 This beginner-friendly Python data-engineering project turns NPPES provider-directory source data into clean, queryable Parquet datasets. The first ingestion step streams weekly source data from its ZIP archive and produces a Massachusetts subset; primary-care and change-analysis transformations will follow in later steps.

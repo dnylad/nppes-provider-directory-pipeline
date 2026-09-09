@@ -18,6 +18,7 @@ LOGGER = logging.getLogger(__name__)
 
 NPI = "NPI"
 ENTITY_TYPE = "Entity Type Code"
+PRACTICE_STATE = "Provider Business Practice Location Address State Name"
 PRACTICE_ZIP = "Provider Business Practice Location Address Postal Code"
 ENUMERATION_DATE = "Provider Enumeration Date"
 DEACTIVATION_DATE = "NPI Deactivation Date"
@@ -90,7 +91,7 @@ def normalize_npi(series: pd.Series) -> tuple[pd.Series, int, int]:
     """Normalize valid NPIs and return missing/invalid counts from raw values."""
     raw = clean_text(series)
     missing_count = int(raw.isna().sum())
-    valid = raw.str.fullmatch(r"\d{10}")
+    valid = raw.str.fullmatch(r"\d{10}").eq(True)
     invalid_count = int((raw.notna() & ~valid).sum())
     return raw.where(valid), missing_count, invalid_count
 
@@ -164,7 +165,12 @@ def build_taxonomies(
         return pd.DataFrame(
             columns=["npi", "taxonomy_code", "primary_taxonomy_flag", "taxonomy_slot"]
         )
-    return pd.concat(tables, ignore_index=True).drop_duplicates()
+    # NPPES can repeat the same code in more than one numbered slot. The
+    # normalized table's grain is one NPI-plus-taxonomy-code pair, so retain
+    # the first source slot and avoid duplicate analytical counts.
+    return pd.concat(tables, ignore_index=True).drop_duplicates(
+        subset=["npi", "taxonomy_code"], keep="first"
+    )
 
 
 def provider_table(cohort: pd.DataFrame) -> pd.DataFrame:
@@ -243,9 +249,15 @@ def transform(input_parquet: Path, output_dir: Path) -> dict[str, object]:
         frame["NPI Reactivation Date"]
     )
 
+    practice_state = clean_text(frame[PRACTICE_STATE]).str.upper()
+    non_massachusetts_records_excluded = int(practice_state.ne("MA").sum())
+    massachusetts_records = frame.loc[practice_state.eq("MA")].copy()
+
     entity_type = clean_text(frame[ENTITY_TYPE])
     organization_records_excluded = int(entity_type.eq("2").sum())
-    individual_records = frame.loc[entity_type.eq(INDIVIDUAL_ENTITY_TYPE)].copy()
+    individual_records = massachusetts_records.loc[
+        clean_text(massachusetts_records[ENTITY_TYPE]).eq(INDIVIDUAL_ENTITY_TYPE)
+    ].copy()
     valid_individual_records = individual_records.loc[individual_records["npi"].notna()].copy()
 
     taxonomies = build_taxonomies(valid_individual_records, field_pairs)
@@ -276,6 +288,7 @@ def transform(input_parquet: Path, output_dir: Path) -> dict[str, object]:
         "run_time_utc": datetime.now(timezone.utc).isoformat(),
         "input_row_count": int(input_row_count),
         "organization_records_excluded": organization_records_excluded,
+        "non_massachusetts_records_excluded": non_massachusetts_records_excluded,
         "primary_care_providers_retained": int(len(providers)),
         "missing_npi_count": missing_npi_count,
         "invalid_npi_count": invalid_npi_count,

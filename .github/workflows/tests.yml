@@ -14,5 +14,7 @@ jobs:
           python-version: "3.12"
       - name: Install dependencies
         run: pip install -r requirements.txt
-      - name: Run tests
-        run: pytest
+      # Tests create only synthetic ZIP, Parquet, and metadata fixtures in
+      # pytest temporary directories; no raw or generated project data is used.
+      - name: Run synthetic test suite
+        run: pytest tests
