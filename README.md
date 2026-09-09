@@ -115,3 +115,25 @@ records.
 ```powershell
 duckdb data\warehouse\nppes_provider_directory.duckdb < sql\analytics.sql
 ```
+
+## Compare processed snapshots
+
+Compare two processed primary-care snapshots by providing the older and newer
+provider Parquet files followed by their matching taxonomy Parquet files. The
+command writes aggregate-only Markdown and JSON reports to `data/reports/`.
+
+```powershell
+.\.venv\Scripts\python.exe src\report_changes.py `
+  path\to\old\providers_ma_primary_care.parquet `
+  path\to\new\providers_ma_primary_care.parquet `
+  path\to\old\provider_taxonomies.parquet `
+  path\to\new\provider_taxonomies.parquet `
+  --output-dir data\reports
+```
+
+The current weekly file is incremental, not a complete statewide baseline.
+For that reason, the report calls absent records “not observed” and newly
+appearing records “newly observed”; it does not infer provider entry or
+removal from file presence alone. A deactivation is called out only when a
+status transition and deactivation date support it. Report outputs are
+excluded from Git.
