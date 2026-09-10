@@ -40,7 +40,9 @@ CMS NPPES Version 2 ZIP files remain unchanged in the local landing zone. They a
 
 `src/ingest.py` streams the main provider CSV from a ZIP without extracting the full archive. It validates required contract fields, retains needed provider and taxonomy columns, filters to a primary business-practice state of Massachusetts, and writes Parquet plus run metadata.
 
-Bronze is raw-ish rather than raw: it has already been schema-checked, reduced to retained columns, filtered to Massachusetts, and serialized as Parquet. It does not normalize NPIs, ZIP codes, or dates; deduplicate; select individual providers; or apply the primary-care cohort definition.
+Bronze is raw-ish rather than raw: after schema validation, it retains only records whose primary practice state is Massachusetts and serializes the retained fields as Parquet. It does not normalize NPIs, ZIP codes, or dates; deduplicate; select individual providers; or apply the primary-care cohort definition.
+
+This is a deliberate replayability-versus-scope trade-off for this portfolio project, not a claim that `data/bronze/` is canonical Medallion Bronze. Limiting storage to Massachusetts makes the project compact and replayable for its stated use case, but a production Bronze layer would retain full national source fidelity before downstream geographic filtering.
 
 ### Silver: `data/silver/`
 
@@ -68,3 +70,12 @@ An individual provider belongs to the cohort when its primary business-practice 
 NPPES information is self-reported. An NPI does not prove licensure, credentialing, network participation, appointment availability, or whether a provider accepts new patients. ZIP-level counts describe directory coverage, not care access, capacity, demand, or network adequacy.
 
 For detailed layer guarantees and limitations, see [data_layer_contracts.md](data_layer_contracts.md).
+
+## Roadmap
+
+The following are future enhancements, not current pipeline guarantees:
+
+- Enrich provider records with CMS Public Provider Enrollment (PECOS) data to identify published Medicare enrollment status, subject to source refresh cadence and matching limitations.
+- Standardize practice-location addresses at the Silver layer.
+- Ingest a monthly full replacement file to establish a comparison baseline.
+- Incorporate non-primary practice locations, advanced practice providers, and scheduled refreshes.

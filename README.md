@@ -21,12 +21,7 @@ flowchart LR
     E --> H[data/gold/reports/: snapshot change reports]
 ```
 
-## Medallion Architecture
-
-- **Source landing — `data/raw/`:** local CMS ZIP files, unchanged and excluded from Git.
-- **Bronze — `data/bronze/`:** Massachusetts provider Parquet with minimal transformation: expected-column validation, retained fields, and primary-practice-state filtering. It is raw-ish, not raw.
-- **Silver — `data/silver/`:** cleaned, conformed Version 1 primary-care `providers` and `provider_taxonomies` Parquet tables plus an aggregate quality report.
-- **Gold — `data/gold/` and `sql/gold/`:** the local DuckDB database, reusable analytic views, aggregate SQL, and generated aggregate change reports.
+Filtering to Massachusetts at Bronze is an intentional scope and storage trade-off for this portfolio project rather than canonical Medallion practice; a production Bronze layer would retain full national fidelity.
 
 ## Technology stack
 
@@ -172,7 +167,11 @@ The [GitHub Actions workflow](.github/workflows/tests.yml) runs this synthetic t
 
 ## Roadmap
 
+- Enrich provider records with CMS Public Provider Enrollment (PECOS) data to identify published Medicare enrollment status, subject to source refresh cadence and matching limitations.
+- Standardize practice-location addresses at the Silver layer.
 - Ingest a monthly full replacement file to establish a comparison baseline
 - Incorporate non-primary practice locations
 - Expand the cohort to advanced practice providers
 - Add scheduled refreshes and repeatable snapshot monitoring
+
+PECOS enrichment and address standardization are future enhancements, not current pipeline guarantees.
