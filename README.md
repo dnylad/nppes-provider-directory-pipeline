@@ -99,7 +99,8 @@ Keep CMS ZIP files in `data/raw/`; that landing zone is intentionally ignored by
 4. Run aggregate analytics with the DuckDB CLI (installed separately) or another DuckDB-compatible client.
 
    ```powershell
-   duckdb data\gold\nppes_provider_directory.duckdb < sql\gold\analytics.sql
+   duckdb data\gold\nppes_provider_directory.duckdb `
+     -c ".read sql/gold/analytics.sql"
    ```
 
 5. Compare two Silver snapshots in chronological order. The Gold report uses cautious “newly observed” and “not observed” terminology.
