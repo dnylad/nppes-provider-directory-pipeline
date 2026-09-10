@@ -29,6 +29,7 @@ flowchart LR
     G --> H[sql/gold/analytics.sql: aggregate analytics]
     E --> I[src/report_changes.py]
     I --> J[data/gold/reports/: aggregate change reports]
+    F --> K[data/gold/manifests/: aggregate lineage manifests]
 ```
 
 ### Source landing: `data/raw/`
@@ -52,9 +53,11 @@ The Silver boundary revalidates Massachusetts, keeps individual providers, norma
 
 ### Gold: `data/gold/` and `sql/gold/`
 
-`src/load.py` loads Silver Parquet into a local DuckDB database under `data/gold/`. Reruns replace tables and views, and source-versus-loaded row counts are validated. `sql/gold/models.sql` defines reusable Gold views; `sql/gold/analytics.sql` contains aggregate-only analytical queries. `src/report_changes.py` compares Silver snapshots and writes aggregate Markdown and JSON reports under `data/gold/reports/`.
+`src/load.py` loads Silver Parquet into a local DuckDB database under `data/gold/`. Reruns replace tables and views, and source-versus-loaded row counts are validated. `sql/gold/models.sql` defines reusable Gold views; `sql/gold/analytics.sql` contains aggregate-only analytical queries. `src/report_changes.py` compares Silver snapshots and writes aggregate Markdown and JSON reports under `data/gold/reports/`. `src/run_manifest.py`, called after the PowerShell runner completes its pipeline stages, writes aggregate lineage manifests under `data/gold/manifests/`.
 
 Gold views and reports are analytical outputs, not a complete statewide provider inventory. A weekly incremental file does not provide a baseline, and “newly observed” or “not observed” records do not prove statewide additions or removals.
+
+Gold run manifests record the source ZIP filename and SHA-256 hash, execution time, Git revision when available, output paths, and aggregate Bronze/Silver counts. They provide lineage and reproducibility evidence, not source-data validation.
 
 ## Version 1 cohort assumption
 

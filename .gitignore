@@ -24,6 +24,7 @@ data/silver/*
 data/gold/*
 !data/gold/.gitkeep
 data/gold/reports/*
+data/gold/manifests/*
 
 # Local DuckDB databases
 *.duckdb

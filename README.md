@@ -71,8 +71,9 @@ python -m pip install -r requirements.txt
 ## Quick start (Windows PowerShell)
 
 After completing setup, use the PowerShell runner to execute Bronze ingestion,
-Silver transformation, and the Gold DuckDB load for one weekly ZIP. It writes
-only to ignored data directories and never adds raw or generated data to Git.
+Silver transformation, the Gold DuckDB load, and an aggregate-only run
+manifest for one weekly ZIP. It writes only to ignored data directories and
+never adds raw or generated data to Git.
 
 ```powershell
 .\scripts\run_snapshot.ps1 `
@@ -82,7 +83,9 @@ only to ignored data directories and never adds raw or generated data to Git.
 
 `SnapshotLabel` may contain letters, numbers, underscores, and hyphens. The
 runner requires `.venv\Scripts\python.exe` and stops when any pipeline stage
-fails.
+fails. It writes lineage and reproducibility evidence to
+`data/gold/manifests/<snapshot_label>.json`; a manifest is not source-data
+validation and contains no provider-level records.
 
 ## Advanced: run pipeline steps manually
 

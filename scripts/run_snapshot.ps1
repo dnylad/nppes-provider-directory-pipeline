@@ -41,11 +41,14 @@ if (-not (Test-Path -LiteralPath $pythonPath -PathType Leaf)) {
 $bronzeDir = Join-Path $projectRoot "data\bronze\$SnapshotLabel"
 $silverDir = Join-Path $projectRoot "data\silver\$SnapshotLabel"
 $goldDatabase = Join-Path $projectRoot "data\gold\nppes_provider_directory.duckdb"
+$manifestDir = Join-Path $projectRoot "data\gold\manifests"
+$manifestPath = Join-Path $manifestDir "$SnapshotLabel.json"
 $bronzeParquet = Join-Path $bronzeDir "$($inputZipItem.BaseName)_massachusetts.parquet"
 
 $ingestScript = Join-Path $projectRoot "src\ingest.py"
 $transformScript = Join-Path $projectRoot "src\transform.py"
 $loadScript = Join-Path $projectRoot "src\load.py"
+$manifestScript = Join-Path $projectRoot "src\run_manifest.py"
 
 function Invoke-PipelineStage {
     param(
@@ -85,8 +88,29 @@ Invoke-PipelineStage -Stage "Gold DuckDB load" -Arguments @(
     $goldDatabase
 )
 
+Invoke-PipelineStage -Stage "Gold run-manifest creation" -Arguments @(
+    $manifestScript,
+    "--snapshot-label",
+    $SnapshotLabel,
+    "--source-zip",
+    $inputZipItem.FullName,
+    "--bronze-dir",
+    $bronzeDir,
+    "--silver-dir",
+    $silverDir,
+    "--gold-database",
+    $goldDatabase,
+    "--manifest-dir",
+    $manifestDir
+)
+
+if (-not (Test-Path -LiteralPath $manifestPath -PathType Leaf)) {
+    throw "Manifest creation completed but the expected manifest was not found: $manifestPath"
+}
+
 Write-Host ""
 Write-Host "Snapshot pipeline completed: $SnapshotLabel"
 Write-Host "Bronze: $bronzeDir"
 Write-Host "Silver: $silverDir"
 Write-Host "Gold:   $goldDatabase"
+Write-Host "Manifest: $manifestPath"

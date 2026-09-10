@@ -7,7 +7,7 @@
 | Source landing | `data/raw/` | Local CMS NPPES ZIP files, unchanged and excluded from Git. |
 | Bronze | `data/bronze/` | Massachusetts NPPES provider Parquet with minimal transformation and ingestion metadata. |
 | Silver | `data/silver/` | Cleaned, conformed, taxonomy-normalized Version 1 primary-care Parquet tables and quality report. |
-| Gold | `data/gold/` and `sql/gold/` | Local DuckDB database, Gold views, aggregate SQL, and aggregate change reports. |
+| Gold | `data/gold/` and `sql/gold/` | Local DuckDB database, Gold views, aggregate SQL, aggregate change reports, and run manifests. |
 
 ## Source landing to Bronze
 
@@ -27,11 +27,11 @@
 
 ## Silver to Gold
 
-`src/load.py` creates or replaces DuckDB tables from Silver Parquet and validates loaded row counts against source row counts. `sql/gold/models.sql` creates semantic views, and `sql/gold/analytics.sql` returns aggregate-only results. `src/report_changes.py` compares two Silver snapshots and writes aggregate reports to `data/gold/reports/`.
+`src/load.py` creates or replaces DuckDB tables from Silver Parquet and validates loaded row counts against source row counts. `sql/gold/models.sql` creates semantic views, and `sql/gold/analytics.sql` returns aggregate-only results. `src/report_changes.py` compares two Silver snapshots and writes aggregate reports to `data/gold/reports/`. After a successful PowerShell snapshot run, `src/run_manifest.py` writes `data/gold/manifests/<snapshot_label>.json`.
 
-**Guarantees:** rerunning the loader replaces rather than appends DuckDB tables and views; Gold analytics and reports do not require returning provider-level rows.
+**Guarantees:** rerunning the loader replaces rather than appends DuckDB tables and views; Gold analytics and reports do not require returning provider-level rows. Each run manifest contains only output paths, source ZIP provenance, Git revision when available, and aggregate Bronze/Silver counts.
 
-**Known limitations:** source-versus-loaded row counts do not prove data completeness or business correctness. The DuckDB base tables are local copies of Silver data that support Gold views; the views and aggregate reports are the Gold analytical outputs. Weekly incremental files are not statewide baselines, so file presence differences must use cautious “newly observed” and “not observed” terminology.
+**Known limitations:** source-versus-loaded row counts do not prove data completeness or business correctness. Run manifests provide lineage and reproducibility evidence, not source-data validation. The DuckDB base tables are local copies of Silver data that support Gold views; the views and aggregate reports are the Gold analytical outputs. Weekly incremental files are not statewide baselines, so file presence differences must use cautious “newly observed” and “not observed” terminology.
 
 ## Cross-layer limitation
 
