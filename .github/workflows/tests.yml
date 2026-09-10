@@ -16,5 +16,9 @@ jobs:
         run: pip install -r requirements.txt
       # Tests create only synthetic ZIP, Parquet, and metadata fixtures in
       # pytest temporary directories; no raw or generated project data is used.
+      - name: Lint with Ruff
+        run: ruff check .
+      - name: Check formatting with Ruff
+        run: ruff format --check .
       - name: Run synthetic test suite
-        run: pytest tests
+        run: pytest

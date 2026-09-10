@@ -59,7 +59,9 @@ def run_transform(tmp_path: Path, records: list[dict[str, str]]):
     return providers, taxonomies, report, saved_report
 
 
-def test_valid_massachusetts_individual_with_approved_taxonomy_is_retained(tmp_path: Path):
+def test_valid_massachusetts_individual_with_approved_taxonomy_is_retained(
+    tmp_path: Path,
+):
     providers, taxonomies, report, _ = run_transform(tmp_path, [synthetic_record()])
 
     assert len(providers) == 1
@@ -80,9 +82,12 @@ def test_non_primary_approved_taxonomy_retains_provider(tmp_path: Path):
 
     assert len(providers) == 1
     assert "207R00000X" in set(taxonomies["taxonomy_code"])
-    assert taxonomies.loc[
-        taxonomies["taxonomy_code"].eq("207R00000X"), "primary_taxonomy_flag"
-    ].item() == "N"
+    assert (
+        taxonomies.loc[
+            taxonomies["taxonomy_code"].eq("207R00000X"), "primary_taxonomy_flag"
+        ].item()
+        == "N"
+    )
 
 
 def test_organization_record_is_excluded(tmp_path: Path):
@@ -97,7 +102,10 @@ def test_organization_record_is_excluded(tmp_path: Path):
 
 
 def test_missing_and_invalid_npis_are_flagged(tmp_path: Path):
-    records = [synthetic_record(**{"NPI": ""}), synthetic_record(**{"NPI": "not-an-npi"})]
+    records = [
+        synthetic_record(**{"NPI": ""}),
+        synthetic_record(**{"NPI": "not-an-npi"}),
+    ]
     providers, _, report, saved_report = run_transform(tmp_path, records)
 
     assert providers.empty

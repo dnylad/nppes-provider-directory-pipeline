@@ -12,7 +12,9 @@ from src import report_changes
 
 def providers(rows: list[dict[str, str]]) -> pd.DataFrame:
     """Build a tiny non-real Silver provider snapshot."""
-    return pd.DataFrame(rows, columns=["npi", "status", "deactivation_date", "practice_zip"])
+    return pd.DataFrame(
+        rows, columns=["npi", "status", "deactivation_date", "practice_zip"]
+    )
 
 
 def taxonomies(rows: list[dict[str, str]]) -> pd.DataFrame:
@@ -20,7 +22,9 @@ def taxonomies(rows: list[dict[str, str]]) -> pd.DataFrame:
     return pd.DataFrame(rows, columns=["npi", "taxonomy_code"])
 
 
-def write_snapshot(tmp_path: Path, label: str, provider_rows, taxonomy_rows) -> tuple[Path, Path]:
+def write_snapshot(
+    tmp_path: Path, label: str, provider_rows, taxonomy_rows
+) -> tuple[Path, Path]:
     provider_path = tmp_path / f"{label}_providers.parquet"
     taxonomy_path = tmp_path / f"{label}_taxonomies.parquet"
     providers(provider_rows).to_parquet(provider_path, index=False)
@@ -33,9 +37,24 @@ def test_change_report_uses_cautious_aggregate_snapshot_terms(tmp_path: Path):
         tmp_path,
         "old",
         [
-            {"npi": "1000000001", "status": "active", "deactivation_date": "", "practice_zip": "02101"},
-            {"npi": "1000000002", "status": "active", "deactivation_date": "", "practice_zip": "02102"},
-            {"npi": "1000000003", "status": "active", "deactivation_date": "", "practice_zip": "02103"},
+            {
+                "npi": "1000000001",
+                "status": "active",
+                "deactivation_date": "",
+                "practice_zip": "02101",
+            },
+            {
+                "npi": "1000000002",
+                "status": "active",
+                "deactivation_date": "",
+                "practice_zip": "02102",
+            },
+            {
+                "npi": "1000000003",
+                "status": "active",
+                "deactivation_date": "",
+                "practice_zip": "02103",
+            },
         ],
         [
             {"npi": "1000000001", "taxonomy_code": "207Q00000X"},
@@ -47,9 +66,24 @@ def test_change_report_uses_cautious_aggregate_snapshot_terms(tmp_path: Path):
         tmp_path,
         "new",
         [
-            {"npi": "1000000001", "status": "active", "deactivation_date": "", "practice_zip": "02101"},
-            {"npi": "1000000002", "status": "deactivated", "deactivation_date": "2025-01-02", "practice_zip": "02199"},
-            {"npi": "1000000004", "status": "active", "deactivation_date": "", "practice_zip": "02201"},
+            {
+                "npi": "1000000001",
+                "status": "active",
+                "deactivation_date": "",
+                "practice_zip": "02101",
+            },
+            {
+                "npi": "1000000002",
+                "status": "deactivated",
+                "deactivation_date": "2025-01-02",
+                "practice_zip": "02199",
+            },
+            {
+                "npi": "1000000004",
+                "status": "active",
+                "deactivation_date": "",
+                "practice_zip": "02201",
+            },
         ],
         [
             {"npi": "1000000001", "taxonomy_code": "207Q00000X"},
@@ -66,8 +100,12 @@ def test_change_report_uses_cautious_aggregate_snapshot_terms(tmp_path: Path):
         new_taxonomy_path,
         output_dir,
     )
-    saved_report = json.loads((output_dir / "nppes_snapshot_change_report.json").read_text())
-    summary = (output_dir / "nppes_snapshot_change_summary.md").read_text(encoding="utf-8")
+    saved_report = json.loads(
+        (output_dir / "nppes_snapshot_change_report.json").read_text()
+    )
+    summary = (output_dir / "nppes_snapshot_change_summary.md").read_text(
+        encoding="utf-8"
+    )
 
     assert report["newly_observed_npi_count"] == 1
     assert report["not_observed_in_newer_snapshot_count"] == 1

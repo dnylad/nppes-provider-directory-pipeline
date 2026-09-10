@@ -133,7 +133,7 @@ Keep CMS ZIP files in `data/raw/`; that landing zone is intentionally ignored by
      --output-dir data\gold\reports\<older_label>_to_<newer_label>
    ```
 
-Generated Bronze, Silver, Gold, and report outputs are excluded from Git.
+Generated data under `data/bronze`, `data/silver`, and `data/gold` is excluded from Git.
 
 ## Testing and CI
 
@@ -144,6 +144,12 @@ Run the synthetic test suite locally:
 ```
 
 The [GitHub Actions workflow](.github/workflows/tests.yml) runs this synthetic test suite on pushes and pull requests. Tests do not use `data/raw/`, generated Parquet, or the local DuckDB database.
+
+## Code quality
+
+- **pytest** validates ingestion, transformation, change reporting, and manifests with synthetic data only.
+- **Ruff** checks Python lint rules and formatting with `ruff check .` and `ruff format --check .`.
+- **GitHub Actions** runs Ruff and pytest on every push and pull request.
 
 ## Project documentation
 

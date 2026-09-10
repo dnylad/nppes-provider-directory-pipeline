@@ -84,7 +84,9 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
             "Bronze Massachusetts primary-practice-location Parquet subset."
         )
     )
-    parser.add_argument("input_zip", type=Path, help="Path to an NPPES weekly ZIP file.")
+    parser.add_argument(
+        "input_zip", type=Path, help="Path to an NPPES weekly ZIP file."
+    )
     parser.add_argument(
         "output_dir",
         type=Path,
@@ -208,7 +210,12 @@ def ingest(input_zip: Path, output_dir: Path, chunk_size: int) -> dict[str, obje
             )
             writer = pq.ParquetWriter(temporary_parquet, parquet_schema)
 
-            LOGGER.info("Reading %s from %s in chunks of %s rows.", main_csv.filename, input_zip.name, chunk_size)
+            LOGGER.info(
+                "Reading %s from %s in chunks of %s rows.",
+                main_csv.filename,
+                input_zip.name,
+                chunk_size,
+            )
             try:
                 with archive.open(main_csv) as csv_stream:
                     for chunk_number, chunk in enumerate(
@@ -254,7 +261,9 @@ def ingest(input_zip: Path, output_dir: Path, chunk_size: int) -> dict[str, obje
                 "output_filename": parquet_path.name,
                 "retained_columns": retained_columns,
             }
-            metadata_path.write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf-8")
+            metadata_path.write_text(
+                json.dumps(metadata, indent=2) + "\n", encoding="utf-8"
+            )
     except zipfile.BadZipFile as error:
         raise IngestionError(
             f"Could not read '{input_zip.name}' as a ZIP file. Download it again and retry."
@@ -283,7 +292,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         LOGGER.error("Ingestion stopped: %s", error)
         return 2
     except (OSError, PermissionError) as error:
-        LOGGER.error("Ingestion stopped because a file could not be read or written: %s", error)
+        LOGGER.error(
+            "Ingestion stopped because a file could not be read or written: %s", error
+        )
         return 2
     return 0
 

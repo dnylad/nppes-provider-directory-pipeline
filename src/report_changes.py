@@ -30,10 +30,18 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
             "Compare two Silver NPPES primary-care snapshots and write Gold aggregate-only reports."
         )
     )
-    parser.add_argument("old_providers", type=Path, help="Older providers Parquet file.")
-    parser.add_argument("new_providers", type=Path, help="Newer providers Parquet file.")
-    parser.add_argument("old_taxonomies", type=Path, help="Older provider-taxonomies Parquet file.")
-    parser.add_argument("new_taxonomies", type=Path, help="Newer provider-taxonomies Parquet file.")
+    parser.add_argument(
+        "old_providers", type=Path, help="Older providers Parquet file."
+    )
+    parser.add_argument(
+        "new_providers", type=Path, help="Newer providers Parquet file."
+    )
+    parser.add_argument(
+        "old_taxonomies", type=Path, help="Older provider-taxonomies Parquet file."
+    )
+    parser.add_argument(
+        "new_taxonomies", type=Path, help="Newer provider-taxonomies Parquet file."
+    )
     parser.add_argument(
         "--output-dir",
         type=Path,
@@ -49,7 +57,9 @@ def clean_text(series: pd.Series) -> pd.Series:
     return values.mask(values.eq(""))
 
 
-def read_parquet(path: Path, required_columns: Iterable[str], label: str) -> pd.DataFrame:
+def read_parquet(
+    path: Path, required_columns: Iterable[str], label: str
+) -> pd.DataFrame:
     if not path.is_file():
         raise ChangeReportError(f"{label} file not found: {path}")
     if path.suffix.lower() != ".parquet":
@@ -57,7 +67,9 @@ def read_parquet(path: Path, required_columns: Iterable[str], label: str) -> pd.
     try:
         frame = pd.read_parquet(path)
     except (OSError, ValueError, ImportError) as error:
-        raise ChangeReportError(f"Could not read {label} Parquet '{path.name}': {error}") from error
+        raise ChangeReportError(
+            f"Could not read {label} Parquet '{path.name}': {error}"
+        ) from error
 
     missing = [column for column in required_columns if column not in frame.columns]
     if missing:
@@ -72,16 +84,22 @@ def prepare_providers(frame: pd.DataFrame, label: str) -> pd.DataFrame:
     prepared = frame.loc[:, list(PROVIDER_REQUIRED_COLUMNS)].copy()
     prepared["npi"] = clean_text(prepared["npi"])
     if prepared["npi"].isna().any():
-        raise ChangeReportError(f"{label} providers contains a missing NPI and cannot be compared safely.")
+        raise ChangeReportError(
+            f"{label} providers contains a missing NPI and cannot be compared safely."
+        )
     if prepared["npi"].duplicated().any():
-        raise ChangeReportError(f"{label} providers contains duplicate NPIs and cannot be compared safely.")
+        raise ChangeReportError(
+            f"{label} providers contains duplicate NPIs and cannot be compared safely."
+        )
     prepared["status"] = clean_text(prepared["status"]).str.lower()
     prepared["deactivation_date"] = clean_text(prepared["deactivation_date"])
     prepared["practice_zip"] = clean_text(prepared["practice_zip"])
     return prepared.set_index("npi", drop=False)
 
 
-def taxonomy_sets(frame: pd.DataFrame, known_npis: set[str]) -> dict[str, frozenset[str]]:
+def taxonomy_sets(
+    frame: pd.DataFrame, known_npis: set[str]
+) -> dict[str, frozenset[str]]:
     """Return distinct, normalized taxonomy-code sets for provider NPIs."""
     taxonomies = frame.loc[:, list(TAXONOMY_REQUIRED_COLUMNS)].copy()
     taxonomies["npi"] = clean_text(taxonomies["npi"])
@@ -91,7 +109,9 @@ def taxonomy_sets(frame: pd.DataFrame, known_npis: set[str]) -> dict[str, frozen
         & taxonomies["taxonomy_code"].notna()
         & taxonomies["npi"].isin(known_npis)
     ]
-    grouped = taxonomies.groupby("npi")["taxonomy_code"].agg(lambda codes: frozenset(codes))
+    grouped = taxonomies.groupby("npi")["taxonomy_code"].agg(
+        lambda codes: frozenset(codes)
+    )
     return {npi: codes for npi, codes in grouped.items()}
 
 
@@ -111,7 +131,9 @@ def compare_snapshots(
     old_taxonomy_sets = taxonomy_sets(old_taxonomies, old_npis)
     new_taxonomy_sets = taxonomy_sets(new_taxonomies, new_npis)
 
-    status_changed = sum(old.at[npi, "status"] != new.at[npi, "status"] for npi in shared_npis)
+    status_changed = sum(
+        old.at[npi, "status"] != new.at[npi, "status"] for npi in shared_npis
+    )
     confirmed_newly_deactivated = sum(
         old.at[npi, "status"] != "deactivated"
         and new.at[npi, "status"] == "deactivated"
@@ -119,10 +141,12 @@ def compare_snapshots(
         for npi in shared_npis
     )
     zip_changed = sum(
-        old.at[npi, "practice_zip"] != new.at[npi, "practice_zip"] for npi in shared_npis
+        old.at[npi, "practice_zip"] != new.at[npi, "practice_zip"]
+        for npi in shared_npis
     )
     taxonomy_changed = sum(
-        old_taxonomy_sets.get(npi, frozenset()) != new_taxonomy_sets.get(npi, frozenset())
+        old_taxonomy_sets.get(npi, frozenset())
+        != new_taxonomy_sets.get(npi, frozenset())
         for npi in shared_npis
     )
 
@@ -180,12 +204,22 @@ def report_changes(
     output_dir: Path = DEFAULT_OUTPUT_DIR,
 ) -> dict[str, object]:
     """Compare snapshots and write aggregate Markdown and JSON reports."""
-    old_providers = read_parquet(old_providers_path, PROVIDER_REQUIRED_COLUMNS, "Older providers")
-    new_providers = read_parquet(new_providers_path, PROVIDER_REQUIRED_COLUMNS, "Newer providers")
-    old_taxonomies = read_parquet(old_taxonomies_path, TAXONOMY_REQUIRED_COLUMNS, "Older taxonomy")
-    new_taxonomies = read_parquet(new_taxonomies_path, TAXONOMY_REQUIRED_COLUMNS, "Newer taxonomy")
+    old_providers = read_parquet(
+        old_providers_path, PROVIDER_REQUIRED_COLUMNS, "Older providers"
+    )
+    new_providers = read_parquet(
+        new_providers_path, PROVIDER_REQUIRED_COLUMNS, "Newer providers"
+    )
+    old_taxonomies = read_parquet(
+        old_taxonomies_path, TAXONOMY_REQUIRED_COLUMNS, "Older taxonomy"
+    )
+    new_taxonomies = read_parquet(
+        new_taxonomies_path, TAXONOMY_REQUIRED_COLUMNS, "Newer taxonomy"
+    )
 
-    metrics = compare_snapshots(old_providers, new_providers, old_taxonomies, new_taxonomies)
+    metrics = compare_snapshots(
+        old_providers, new_providers, old_taxonomies, new_taxonomies
+    )
     output_dir.mkdir(parents=True, exist_ok=True)
     markdown_path = output_dir / "nppes_snapshot_change_summary.md"
     json_path = output_dir / "nppes_snapshot_change_report.json"
@@ -226,7 +260,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         LOGGER.error("Change report stopped: %s", error)
         return 2
     except OSError as error:
-        LOGGER.error("Change report stopped because a file could not be read or written: %s", error)
+        LOGGER.error(
+            "Change report stopped because a file could not be read or written: %s",
+            error,
+        )
         return 2
     return 0
 

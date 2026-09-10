@@ -54,7 +54,9 @@ def validate_sources(processed_dir: Path) -> dict[str, Path]:
             f"Silver-data directory not found: {processed_dir}. Run src/transform.py first."
         )
 
-    sources = {table: processed_dir / filename for table, filename in SOURCE_FILES.items()}
+    sources = {
+        table: processed_dir / filename for table, filename in SOURCE_FILES.items()
+    }
     missing = [str(path) for path in sources.values() if not path.is_file()]
     if missing:
         raise LoadError(
@@ -65,7 +67,9 @@ def validate_sources(processed_dir: Path) -> dict[str, Path]:
 
 def source_row_count(connection: duckdb.DuckDBPyConnection, parquet_path: Path) -> int:
     path = sql_path_literal(parquet_path)
-    return int(connection.execute(f"SELECT COUNT(*) FROM read_parquet('{path}')").fetchone()[0])
+    return int(
+        connection.execute(f"SELECT COUNT(*) FROM read_parquet('{path}')").fetchone()[0]
+    )
 
 
 def load_table(
@@ -79,8 +83,15 @@ def load_table(
     connection.execute(
         f"CREATE OR REPLACE TABLE {table_name} AS SELECT * FROM read_parquet('{path}')"
     )
-    loaded_count = int(connection.execute(f"SELECT COUNT(*) FROM {table_name}").fetchone()[0])
-    LOGGER.info("Loaded %s: %s source rows, %s table rows.", table_name, source_count, loaded_count)
+    loaded_count = int(
+        connection.execute(f"SELECT COUNT(*) FROM {table_name}").fetchone()[0]
+    )
+    LOGGER.info(
+        "Loaded %s: %s source rows, %s table rows.",
+        table_name,
+        source_count,
+        loaded_count,
+    )
     if source_count != loaded_count:
         raise LoadError(
             f"Row-count validation failed for '{table_name}': expected {source_count}, "
@@ -95,7 +106,9 @@ def apply_models(connection: duckdb.DuckDBPyConnection) -> None:
     try:
         connection.execute(MODELS_PATH.read_text(encoding="utf-8"))
     except OSError as error:
-        raise LoadError(f"Could not read SQL view file '{MODELS_PATH}': {error}") from error
+        raise LoadError(
+            f"Could not read SQL view file '{MODELS_PATH}': {error}"
+        ) from error
     LOGGER.info("Created or replaced analytics views from %s.", MODELS_PATH.name)
 
 
@@ -109,7 +122,9 @@ def load(processed_dir: Path, database_path: Path) -> dict[str, tuple[int, int]]
     try:
         connection = duckdb.connect(str(database_path))
     except duckdb.Error as error:
-        raise LoadError(f"Could not open DuckDB database '{database_path}': {error}") from error
+        raise LoadError(
+            f"Could not open DuckDB database '{database_path}': {error}"
+        ) from error
 
     try:
         results = {
@@ -135,7 +150,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         LOGGER.error("Load stopped: %s", error)
         return 2
     except OSError as error:
-        LOGGER.error("Load stopped because a file could not be read or written: %s", error)
+        LOGGER.error(
+            "Load stopped because a file could not be read or written: %s", error
+        )
         return 2
     return 0
 

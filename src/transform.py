@@ -135,7 +135,9 @@ def taxonomy_field_pairs(columns: Sequence[str]) -> list[tuple[int, str, str]]:
 
 
 def validate_columns(frame: pd.DataFrame) -> list[tuple[int, str, str]]:
-    missing = [column for column in REQUIRED_BASE_COLUMNS if column not in frame.columns]
+    missing = [
+        column for column in REQUIRED_BASE_COLUMNS if column not in frame.columns
+    ]
     if missing:
         raise TransformError(
             "Input Parquet is missing required fields from docs/data_contract.md: "
@@ -154,8 +156,12 @@ def build_taxonomies(
         values = pd.DataFrame(
             {
                 "npi": individual_records["npi"],
-                "taxonomy_code": clean_text(individual_records[taxonomy_field]).str.upper(),
-                "primary_taxonomy_flag": clean_text(individual_records[primary_field]).str.upper(),
+                "taxonomy_code": clean_text(
+                    individual_records[taxonomy_field]
+                ).str.upper(),
+                "primary_taxonomy_flag": clean_text(
+                    individual_records[primary_field]
+                ).str.upper(),
                 "taxonomy_slot": slot,
             }
         )
@@ -199,7 +205,9 @@ def provider_table(cohort: pd.DataFrame) -> pd.DataFrame:
             ).str.upper(),
             "practice_zip": cohort["normalized_zip"],
             "practice_country_code": clean_text(
-                cohort["Provider Business Practice Location Address Country Code (If outside U.S.)"]
+                cohort[
+                    "Provider Business Practice Location Address Country Code (If outside U.S.)"
+                ]
             ),
             "practice_phone": clean_text(
                 cohort["Provider Business Practice Location Address Telephone Number"]
@@ -208,13 +216,17 @@ def provider_table(cohort: pd.DataFrame) -> pd.DataFrame:
                 cohort["Provider Business Practice Location Address Fax Number"]
             ),
             "enumeration_date": cohort["normalized_enumeration_date"],
-            "deactivation_reason_code": clean_text(cohort["NPI Deactivation Reason Code"]),
+            "deactivation_reason_code": clean_text(
+                cohort["NPI Deactivation Reason Code"]
+            ),
             "deactivation_date": cohort["normalized_deactivation_date"],
             "reactivation_date": cohort["normalized_reactivation_date"],
         }
     )
-    providers["status"] = providers["deactivation_date"].notna().map(
-        {True: "deactivated", False: "active"}
+    providers["status"] = (
+        providers["deactivation_date"]
+        .notna()
+        .map({True: "deactivated", False: "active"})
     )
     return providers.drop_duplicates(subset="npi", keep="first").reset_index(drop=True)
 
@@ -226,7 +238,9 @@ def transform(input_parquet: Path, output_dir: Path) -> dict[str, object]:
             f"Input Parquet not found: {input_parquet}. Run src/ingest.py first or check the path."
         )
     if input_parquet.suffix.lower() != ".parquet":
-        raise TransformError(f"Input must be a .parquet file, not: {input_parquet.name}")
+        raise TransformError(
+            f"Input must be a .parquet file, not: {input_parquet.name}"
+        )
 
     try:
         frame = pd.read_parquet(input_parquet)
@@ -239,14 +253,14 @@ def transform(input_parquet: Path, output_dir: Path) -> dict[str, object]:
     input_row_count = len(frame)
     frame["npi"], missing_npi_count, invalid_npi_count = normalize_npi(frame[NPI])
     frame["normalized_zip"], missing_zip_count = normalize_zip(frame[PRACTICE_ZIP])
-    frame["normalized_enumeration_date"], invalid_enumeration_date_count = normalize_date(
-        frame[ENUMERATION_DATE]
+    frame["normalized_enumeration_date"], invalid_enumeration_date_count = (
+        normalize_date(frame[ENUMERATION_DATE])
     )
-    frame["normalized_deactivation_date"], invalid_deactivation_date_count = normalize_date(
-        frame[DEACTIVATION_DATE]
+    frame["normalized_deactivation_date"], invalid_deactivation_date_count = (
+        normalize_date(frame[DEACTIVATION_DATE])
     )
-    frame["normalized_reactivation_date"], invalid_reactivation_date_count = normalize_date(
-        frame["NPI Reactivation Date"]
+    frame["normalized_reactivation_date"], invalid_reactivation_date_count = (
+        normalize_date(frame["NPI Reactivation Date"])
     )
 
     practice_state = clean_text(frame[PRACTICE_STATE]).str.upper()
@@ -258,12 +272,16 @@ def transform(input_parquet: Path, output_dir: Path) -> dict[str, object]:
     individual_records = massachusetts_records.loc[
         clean_text(massachusetts_records[ENTITY_TYPE]).eq(INDIVIDUAL_ENTITY_TYPE)
     ].copy()
-    valid_individual_records = individual_records.loc[individual_records["npi"].notna()].copy()
+    valid_individual_records = individual_records.loc[
+        individual_records["npi"].notna()
+    ].copy()
 
     taxonomies = build_taxonomies(valid_individual_records, field_pairs)
     npis_with_taxonomy = set(taxonomies["npi"])
     missing_taxonomy_count = int(
-        valid_individual_records["npi"].map(lambda npi: npi not in npis_with_taxonomy).sum()
+        valid_individual_records["npi"]
+        .map(lambda npi: npi not in npis_with_taxonomy)
+        .sum()
     )
     cohort_npis = set(
         taxonomies.loc[taxonomies["taxonomy_code"].isin(PRIMARY_CARE_CODES), "npi"]
@@ -272,7 +290,9 @@ def transform(input_parquet: Path, output_dir: Path) -> dict[str, object]:
         valid_individual_records["npi"].isin(cohort_npis)
     ].copy()
     providers = provider_table(cohort_records)
-    cohort_taxonomies = taxonomies.loc[taxonomies["npi"].isin(set(providers["npi"]))].copy()
+    cohort_taxonomies = taxonomies.loc[
+        taxonomies["npi"].isin(set(providers["npi"]))
+    ].copy()
     cohort_taxonomies = cohort_taxonomies.sort_values(
         ["npi", "taxonomy_slot", "taxonomy_code"], ignore_index=True
     )
@@ -300,7 +320,9 @@ def transform(input_parquet: Path, output_dir: Path) -> dict[str, object]:
         "providers_output_filename": providers_path.name,
         "provider_taxonomies_output_filename": taxonomies_path.name,
     }
-    quality_report_path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+    quality_report_path.write_text(
+        json.dumps(report, indent=2) + "\n", encoding="utf-8"
+    )
 
     LOGGER.info(
         "Finished transformation: %s input rows, %s organization records excluded, "
@@ -322,7 +344,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         LOGGER.error("Transformation stopped: %s", error)
         return 2
     except (OSError, PermissionError) as error:
-        LOGGER.error("Transformation stopped because a file could not be read or written: %s", error)
+        LOGGER.error(
+            "Transformation stopped because a file could not be read or written: %s",
+            error,
+        )
         return 2
     return 0
 
