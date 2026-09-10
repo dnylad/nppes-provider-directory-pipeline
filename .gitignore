@@ -11,15 +11,19 @@ env/
 .vscode/
 .idea/
 
-# Data outputs and local source data
+# Data layers and local source data
+# data/raw is the source landing zone. Bronze holds minimally transformed
+# Massachusetts subsets; Silver holds conformed cohort tables; Gold holds
+# local analytics and aggregate reports.
 data/raw/*
 !data/raw/.gitkeep
-data/processed/*
-!data/processed/.gitkeep
-data/interim/*
-!data/interim/.gitkeep
-data/reports/*
-data/warehouse/*
+data/bronze/*
+!data/bronze/.gitkeep
+data/silver/*
+!data/silver/.gitkeep
+data/gold/*
+!data/gold/.gitkeep
+data/gold/reports/*
 
 # Local DuckDB databases
 *.duckdb

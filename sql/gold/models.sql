@@ -1,4 +1,4 @@
--- Analytics views for the local NPPES DuckDB warehouse.
+-- Gold semantic views for the local NPPES DuckDB warehouse.
 
 CREATE OR REPLACE VIEW active_primary_care_providers AS
 SELECT *

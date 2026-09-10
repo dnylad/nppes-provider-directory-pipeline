@@ -82,7 +82,7 @@ def test_missing_required_column_has_clear_error(tmp_path: Path):
     archive_path = create_synthetic_zip(tmp_path, [row], columns)
 
     with pytest.raises(ingest.IngestionError, match="Provider First Name"):
-        ingest.ingest(archive_path, tmp_path / "interim", chunk_size=2)
+        ingest.ingest(archive_path, tmp_path / "bronze", chunk_size=2)
 
 
 def test_only_massachusetts_rows_are_written(tmp_path: Path):
@@ -93,7 +93,7 @@ def test_only_massachusetts_rows_are_written(tmp_path: Path):
             synthetic_row(**{"NPI": "1000000002", "Provider Business Practice Location Address State Name": "NY"}),
         ],
     )
-    output_dir = tmp_path / "interim"
+    output_dir = tmp_path / "bronze"
     ingest.ingest(archive_path, output_dir, chunk_size=1)
 
     parquet_path, _ = ingest.output_paths(archive_path, output_dir)
@@ -118,7 +118,7 @@ def test_metadata_records_input_and_massachusetts_counts(tmp_path: Path):
             ),
         ],
     )
-    output_dir = tmp_path / "interim"
+    output_dir = tmp_path / "bronze"
     returned_metadata = ingest.ingest(archive_path, output_dir, chunk_size=2)
     parquet_path, metadata_path = ingest.output_paths(archive_path, output_dir)
     saved_metadata = json.loads(metadata_path.read_text(encoding="utf-8"))

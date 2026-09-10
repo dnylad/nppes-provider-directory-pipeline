@@ -1,4 +1,4 @@
-"""Transform Massachusetts NPPES ingestion output into Version 1 tables."""
+"""Transform Bronze Massachusetts NPPES data into Silver Version 1 tables."""
 
 from __future__ import annotations
 
@@ -64,19 +64,19 @@ class TransformError(Exception):
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
-            "Create Version 1 Massachusetts primary-care provider and taxonomy "
-            "Parquet tables from an ingestion Parquet file."
+            "Create Silver Version 1 Massachusetts primary-care provider and taxonomy "
+            "Parquet tables from a Bronze ingestion Parquet file."
         )
     )
     parser.add_argument(
         "input_parquet",
         type=Path,
-        help="Massachusetts ingestion Parquet file created by src/ingest.py.",
+        help="Bronze Massachusetts Parquet file created by src/ingest.py.",
     )
     parser.add_argument(
         "output_dir",
         type=Path,
-        help="Directory for processed Parquet files and the quality report.",
+        help="Silver output directory for conformed Parquet files and the quality report.",
     )
     return parser.parse_args(argv)
 
@@ -220,7 +220,7 @@ def provider_table(cohort: pd.DataFrame) -> pd.DataFrame:
 
 
 def transform(input_parquet: Path, output_dir: Path) -> dict[str, object]:
-    """Create processed Version 1 Parquet tables and an aggregate quality report."""
+    """Create Silver Version 1 Parquet tables and an aggregate quality report."""
     if not input_parquet.is_file():
         raise TransformError(
             f"Input Parquet not found: {input_parquet}. Run src/ingest.py first or check the path."
@@ -309,7 +309,7 @@ def transform(input_parquet: Path, output_dir: Path) -> dict[str, object]:
         organization_records_excluded,
         len(providers),
     )
-    LOGGER.info("Wrote processed outputs to %s.", output_dir)
+    LOGGER.info("Wrote Silver outputs to %s.", output_dir)
     return report
 
 

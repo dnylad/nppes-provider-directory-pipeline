@@ -4,7 +4,7 @@
 
 ## Project summary
 
-A beginner-friendly Python data-engineering project that turns CMS NPPES weekly provider-directory extracts into reproducible Massachusetts primary-care datasets, a local DuckDB analytics layer, and cautious snapshot-change reports. Raw source files remain local and are never committed to Git.
+A beginner-friendly Python data-engineering project that turns CMS NPPES weekly provider-directory extracts into reproducible Massachusetts primary-care datasets, a local DuckDB Gold analytics layer, and cautious snapshot-change reports. Raw source files remain local and are never committed to Git.
 
 ## Massachusetts primary-care use case
 
@@ -12,14 +12,21 @@ Healthcare operations, provider-directory, and network teams need a repeatable w
 
 ```mermaid
 flowchart LR
-    A[CMS NPPES ZIP files] --> B[Python ingestion]
-    B --> C[Interim Massachusetts Parquet]
+    A[data/raw/: CMS NPPES ZIP files] --> B[Python ingestion]
+    B --> C[data/bronze/: MA minimally transformed Parquet]
     C --> D[Python transformation]
-    D --> E[Processed primary-care Parquet]
-    E --> F[DuckDB warehouse]
-    F --> G[Aggregate analytics]
-    E --> H[Snapshot change report]
+    D --> E[data/silver/: conformed primary-care Parquet]
+    E --> F[data/gold/: DuckDB and Gold views]
+    F --> G[sql/gold/analytics.sql: aggregate analytics]
+    E --> H[data/gold/reports/: snapshot change reports]
 ```
+
+## Medallion Architecture
+
+- **Source landing — `data/raw/`:** local CMS ZIP files, unchanged and excluded from Git.
+- **Bronze — `data/bronze/`:** Massachusetts provider Parquet with minimal transformation: expected-column validation, retained fields, and primary-practice-state filtering. It is raw-ish, not raw.
+- **Silver — `data/silver/`:** cleaned, conformed Version 1 primary-care `providers` and `provider_taxonomies` Parquet tables plus an aggregate quality report.
+- **Gold — `data/gold/` and `sql/gold/`:** the local DuckDB database, reusable analytic views, aggregate SQL, and generated aggregate change reports.
 
 ## Technology stack
 
@@ -63,50 +70,50 @@ python -m pip install -r requirements.txt
 
 ## Run the pipeline
 
-Keep CMS ZIP files in `data/raw/`; that directory is intentionally ignored by Git. Replace placeholders below with your local filenames and snapshot label.
+Keep CMS ZIP files in `data/raw/`; that landing zone is intentionally ignored by Git. Replace placeholders below with your local filenames and snapshot label.
 
-1. Ingest a weekly ZIP to a Massachusetts interim Parquet dataset.
+1. Ingest a weekly ZIP to a Bronze Massachusetts Parquet dataset.
 
    ```powershell
    .\.venv\Scripts\python.exe src\ingest.py `
      data\raw\<nppes_weekly_zip>.zip `
-     data\interim\<snapshot_label>
+     data\bronze\<snapshot_label>
    ```
 
-2. Transform the interim snapshot into the Version 1 primary-care tables.
+2. Transform the Bronze snapshot into Silver Version 1 primary-care tables.
 
    ```powershell
    .\.venv\Scripts\python.exe src\transform.py `
-     data\interim\<snapshot_label>\<nppes_weekly_zip>_massachusetts.parquet `
-     data\processed\<snapshot_label>
+     data\bronze\<snapshot_label>\<nppes_weekly_zip>_massachusetts.parquet `
+     data\silver\<snapshot_label>
    ```
 
-3. Load processed Parquet into local DuckDB. Reruns replace tables and views rather than append duplicate rows.
+3. Load Silver Parquet into local Gold DuckDB. Reruns replace tables and views rather than append duplicate rows.
 
    ```powershell
    .\.venv\Scripts\python.exe src\load.py `
-     data\processed\<snapshot_label> `
-     data\warehouse\nppes_provider_directory.duckdb
+     data\silver\<snapshot_label> `
+     data\gold\nppes_provider_directory.duckdb
    ```
 
 4. Run aggregate analytics with the DuckDB CLI (installed separately) or another DuckDB-compatible client.
 
    ```powershell
-   duckdb data\warehouse\nppes_provider_directory.duckdb < sql\analytics.sql
+   duckdb data\gold\nppes_provider_directory.duckdb < sql\gold\analytics.sql
    ```
 
-5. Compare two processed snapshots in chronological order. The report uses cautious “newly observed” and “not observed” terminology.
+5. Compare two Silver snapshots in chronological order. The Gold report uses cautious “newly observed” and “not observed” terminology.
 
    ```powershell
    .\.venv\Scripts\python.exe src\report_changes.py `
-     data\processed\<older_label>\providers_ma_primary_care.parquet `
-     data\processed\<newer_label>\providers_ma_primary_care.parquet `
-     data\processed\<older_label>\provider_taxonomies.parquet `
-     data\processed\<newer_label>\provider_taxonomies.parquet `
-     --output-dir data\reports\<older_label>_to_<newer_label>
+     data\silver\<older_label>\providers_ma_primary_care.parquet `
+     data\silver\<newer_label>\providers_ma_primary_care.parquet `
+     data\silver\<older_label>\provider_taxonomies.parquet `
+     data\silver\<newer_label>\provider_taxonomies.parquet `
+     --output-dir data\gold\reports\<older_label>_to_<newer_label>
    ```
 
-Generated interim, processed, warehouse, and report outputs are excluded from Git.
+Generated Bronze, Silver, Gold, and report outputs are excluded from Git.
 
 ## Testing and CI
 
@@ -121,6 +128,7 @@ The [GitHub Actions workflow](.github/workflows/tests.yml) runs this synthetic t
 ## Project documentation
 
 - [Architecture overview](docs/architecture.md)
+- [Data-layer contracts](docs/data_layer_contracts.md)
 - [Data plan](docs/data_plan.md)
 - [Data contract](docs/data_contract.md)
 - [Weekly source log](docs/source_log.md)
@@ -129,7 +137,7 @@ The [GitHub Actions workflow](.github/workflows/tests.yml) runs this synthetic t
 
 ## What this demonstrates
 
-- Designing a layered data pipeline from raw ZIPs through Parquet and DuckDB
+- Designing a Medallion Architecture pipeline from source landing through Bronze, Silver, and Gold
 - Validating data contracts and provider-directory quality rules
 - Normalizing repeating taxonomy fields into an analysis-ready table
 - Building idempotent local warehouse loads and reusable SQL views

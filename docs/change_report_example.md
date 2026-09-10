@@ -2,6 +2,8 @@
 
 ## Snapshots compared
 
+This Gold aggregate report compares two Silver primary-care snapshots.
+
 - Older weekly incremental snapshot: `20260803_20260809`
 - Newer weekly incremental snapshot: `20260831_20260906`
 

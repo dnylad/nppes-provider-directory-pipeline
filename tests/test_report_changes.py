@@ -11,12 +11,12 @@ from src import report_changes
 
 
 def providers(rows: list[dict[str, str]]) -> pd.DataFrame:
-    """Build a tiny non-real processed provider snapshot."""
+    """Build a tiny non-real Silver provider snapshot."""
     return pd.DataFrame(rows, columns=["npi", "status", "deactivation_date", "practice_zip"])
 
 
 def taxonomies(rows: list[dict[str, str]]) -> pd.DataFrame:
-    """Build a tiny non-real processed taxonomy snapshot."""
+    """Build a tiny non-real Silver taxonomy snapshot."""
     return pd.DataFrame(rows, columns=["npi", "taxonomy_code"])
 
 

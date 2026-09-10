@@ -2,11 +2,13 @@
 
 ## Scope
 
-This plan supports the **NPPES Provider Directory Change Pipeline** for the Massachusetts primary-care cohort. It documents the intended data design only; no source data has been downloaded or processed.
+This plan supports the **NPPES Provider Directory Change Pipeline** for the Massachusetts primary-care cohort. The implemented Version 1 flow writes minimally transformed Massachusetts provider data to Bronze (`data/bronze/`) and conformed cohort tables to Silver (`data/silver/`).
 
 ## Source and planned inputs
 
 The source will be the CMS **NPPES Version 2 downloadable files**.
+
+CMS ZIP files stay in the local source landing zone, `data/raw/`. They are not a Medallion layer and are intentionally excluded from Git.
 
 The first pipeline version will use one weekly incremental provider file as its initial input. Later versions will add these inputs:
 

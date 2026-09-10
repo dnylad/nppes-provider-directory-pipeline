@@ -48,7 +48,7 @@ def synthetic_record(**overrides: str) -> dict[str, str]:
 def run_transform(tmp_path: Path, records: list[dict[str, str]]):
     """Run the real transformation against a tiny synthetic Parquet input."""
     input_path = tmp_path / "synthetic_input.parquet"
-    output_dir = tmp_path / "processed"
+    output_dir = tmp_path / "silver"
     pd.DataFrame(records).to_parquet(input_path, index=False)
     report = transform.transform(input_path, output_dir)
     providers = pd.read_parquet(output_dir / "providers_ma_primary_care.parquet")

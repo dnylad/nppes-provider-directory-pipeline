@@ -2,7 +2,7 @@
 
 ## Scope
 
-This contract defines the raw fields and validation rules for Version 1 of the Massachusetts primary-care NPPES provider pipeline. It applies to the weekly Version 2 main provider file and does not define ingestion or transformation code.
+This contract defines the raw fields and validation rules for Version 1 of the Massachusetts primary-care NPPES provider pipeline. It applies to the weekly Version 2 main provider file, which is validated and subsetted into Bronze (`data/bronze/`) before Silver (`data/silver/`) normalization.
 
 ## Business-concept mapping
 

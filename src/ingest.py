@@ -1,4 +1,4 @@
-"""Stream a weekly NPPES provider ZIP into a Massachusetts Parquet subset.
+"""Stream a weekly NPPES provider ZIP into a Bronze Massachusetts Parquet subset.
 
 This module intentionally performs only ingestion and geography filtering.
 Primary-care cohort filtering and other business transformations belong in a
@@ -81,14 +81,14 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
             "Stream the main NPPES provider CSV from a ZIP and write a "
-            "Massachusetts primary-practice-location Parquet subset."
+            "Bronze Massachusetts primary-practice-location Parquet subset."
         )
     )
     parser.add_argument("input_zip", type=Path, help="Path to an NPPES weekly ZIP file.")
     parser.add_argument(
         "output_dir",
         type=Path,
-        help="Directory for the generated Parquet file and JSON metadata.",
+        help="Bronze output directory for the generated Parquet file and JSON metadata.",
     )
     parser.add_argument(
         "--chunk-size",

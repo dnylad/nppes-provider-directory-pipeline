@@ -1,4 +1,4 @@
-"""Compare aggregate changes between two processed NPPES primary-care snapshots."""
+"""Compare aggregate changes between two Silver NPPES primary-care snapshots."""
 
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ LOGGER = logging.getLogger(__name__)
 
 PROVIDER_REQUIRED_COLUMNS = ("npi", "status", "deactivation_date", "practice_zip")
 TAXONOMY_REQUIRED_COLUMNS = ("npi", "taxonomy_code")
-DEFAULT_OUTPUT_DIR = Path("data/reports")
+DEFAULT_OUTPUT_DIR = Path("data/gold/reports")
 
 
 class ChangeReportError(Exception):
@@ -27,7 +27,7 @@ class ChangeReportError(Exception):
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
-            "Compare two processed NPPES primary-care snapshots and write aggregate-only reports."
+            "Compare two Silver NPPES primary-care snapshots and write Gold aggregate-only reports."
         )
     )
     parser.add_argument("old_providers", type=Path, help="Older providers Parquet file.")
@@ -38,7 +38,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         "--output-dir",
         type=Path,
         default=DEFAULT_OUTPUT_DIR,
-        help="Directory for the Markdown and JSON reports (default: data/reports).",
+        help="Gold directory for Markdown and JSON reports (default: data/gold/reports).",
     )
     return parser.parse_args(argv)
 
@@ -144,7 +144,7 @@ def markdown_summary(report: dict[str, object]) -> str:
 
 ## Important interpretation note
 
-This comparison is based on file presence and processed snapshot attributes.
+This comparison is based on file presence and Silver snapshot attributes.
 “Newly observed” and “not observed in the newer snapshot” describe differences
 between files; they do not prove a provider entered or left the market. A
 deactivation is identified only when the newer status is `deactivated` and a

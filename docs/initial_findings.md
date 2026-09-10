@@ -2,6 +2,8 @@
 
 ## Executive summary
 
+These are Gold aggregate findings produced from the local DuckDB analytics layer. They do not expose provider-level data.
+
 The weekly NPPES incremental file produced an initial Massachusetts
 primary-care directory cohort of 48 providers: 47 active and 1 deactivated.
 The active cohort spans 24 primary-practice ZIP codes. Internal Medicine is

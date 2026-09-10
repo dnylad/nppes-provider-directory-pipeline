@@ -1,4 +1,4 @@
--- Aggregate analytics for the Massachusetts primary-care provider cohort.
+-- Gold aggregate analytics for the Massachusetts primary-care provider cohort.
 -- These queries intentionally return summary metrics only, never provider rows.
 
 -- 1. Healthcare operations question: How many active primary-care providers

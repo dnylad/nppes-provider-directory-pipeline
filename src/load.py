@@ -1,4 +1,4 @@
-"""Load processed NPPES Parquet files into a local DuckDB analytics database."""
+"""Load Silver NPPES Parquet files into a local Gold DuckDB analytics database."""
 
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ SOURCE_FILES = {
     "providers": "providers_ma_primary_care.parquet",
     "provider_taxonomies": "provider_taxonomies.parquet",
 }
-MODELS_PATH = Path(__file__).resolve().parent.parent / "sql" / "models.sql"
+MODELS_PATH = Path(__file__).resolve().parent.parent / "sql" / "gold" / "models.sql"
 
 
 class LoadError(Exception):
@@ -27,18 +27,18 @@ class LoadError(Exception):
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
-            "Create or refresh a local DuckDB warehouse from processed NPPES Parquet files."
+            "Create or refresh a local Gold DuckDB warehouse from Silver NPPES Parquet files."
         )
     )
     parser.add_argument(
         "processed_dir",
         type=Path,
-        help="Directory containing providers_ma_primary_care.parquet and provider_taxonomies.parquet.",
+        help="Silver directory containing providers_ma_primary_care.parquet and provider_taxonomies.parquet.",
     )
     parser.add_argument(
         "database_path",
         type=Path,
-        help="Path for the local DuckDB database, normally under data/warehouse/.",
+        help="Path for the local Gold DuckDB database, normally under data/gold/.",
     )
     return parser.parse_args(argv)
 
@@ -51,14 +51,14 @@ def sql_path_literal(path: Path) -> str:
 def validate_sources(processed_dir: Path) -> dict[str, Path]:
     if not processed_dir.is_dir():
         raise LoadError(
-            f"Processed-data directory not found: {processed_dir}. Run src/transform.py first."
+            f"Silver-data directory not found: {processed_dir}. Run src/transform.py first."
         )
 
     sources = {table: processed_dir / filename for table, filename in SOURCE_FILES.items()}
     missing = [str(path) for path in sources.values() if not path.is_file()]
     if missing:
         raise LoadError(
-            "Required processed Parquet file(s) are missing: " + ", ".join(missing)
+            "Required Silver Parquet file(s) are missing: " + ", ".join(missing)
         )
     return sources
 
@@ -100,7 +100,7 @@ def apply_models(connection: duckdb.DuckDBPyConnection) -> None:
 
 
 def load(processed_dir: Path, database_path: Path) -> dict[str, tuple[int, int]]:
-    """Refresh warehouse tables and views, returning validated row counts."""
+    """Refresh Gold warehouse tables and views, returning validated row counts."""
     sources = validate_sources(processed_dir)
     if database_path.exists() and database_path.is_dir():
         raise LoadError(f"Database path is a directory, not a file: {database_path}")
